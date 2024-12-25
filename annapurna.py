@@ -23,7 +23,7 @@ news_count = total_existsing_news + 1
 for category, category_page in ANNAPURNAPOST_WEBSITES.items():
     for page in range(1, 5000):
         res = req.get(category_page + ("" if page == 1 else f"?page={page}"))
-        if res.status_code != 200:
+        if res.status_code == 200:
             soup = BeautifulSoup(res.content, "html5lib")
             titles_info = soup.select("h3.card__title")[:20]
             for title_info in titles_info:
