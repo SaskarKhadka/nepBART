@@ -16,7 +16,7 @@ if not os.path.exists(data_path):
 if not os.path.exists(annapurna_data_path):
     os.mkdir(annapurna_data_path)
 
-total_existsing_news = len(os.listdir(data_path))
+total_existsing_news = len(os.listdir(annapurna_data_path))
 
 news_count = total_existsing_news + 1
 
@@ -35,7 +35,12 @@ for category, category_page in ANNAPURNAPOST_WEBSITES.items():
                 news_details = soup.select("div.news__details p")
                 news_text = []
                 for paragraph in news_details:
-                    news_text.append(paragraph.text.strip())
+                    news_text.append(
+                        paragraph.text.strip()
+                        .replace("\xa0", " ")
+                        .replace("\n", " ")
+                        .replace("\t", " ")
+                    )
                 news_text = " ".join(news_text)
                 if news_text != "" and news_text != " ":
                     # first_paragraph = news_text[0].split(" ")
