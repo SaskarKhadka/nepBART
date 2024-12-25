@@ -8,7 +8,7 @@ import time
 
 base_path = os.path.dirname(os.path.abspath(__file__))
 data_path = os.path.join(base_path, "data")
-annapurna_data_path = os.path.join(base_path, "annapurna")
+annapurna_data_path = os.path.join(data_path, "annapurna")
 
 if not os.path.exists(data_path):
     os.mkdir(data_path)
