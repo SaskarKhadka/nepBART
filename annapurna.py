@@ -20,9 +20,9 @@ total_existsing_news = len(os.listdir(annapurna_data_path))
 
 news_count = total_existsing_news + 1
 
-for category, category_page in ANNAPURNAPOST_WEBSITES.items():
-    for page in range(1, 5000):
-        res = req.get(category_page + ("" if page == 1 else f"?page={page}"))
+for category, category_details in ANNAPURNAPOST_WEBSITES.items():
+    for page in range(1, category_details[1]):
+        res = req.get(category_details[0] + ("" if page == 1 else f"?page={page}"))
         if res.status_code == 200:
             soup = BeautifulSoup(res.content, "html5lib")
             titles_info = soup.select("h3.card__title")[:20]
@@ -66,4 +66,4 @@ for category, category_page in ANNAPURNAPOST_WEBSITES.items():
         elif res.status_code != 404:
             continue
         else:
-            exit()
+            break
