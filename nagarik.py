@@ -8,31 +8,36 @@ import time
 
 base_path = os.path.dirname(os.path.abspath(__file__))
 data_path = os.path.join(base_path, "data")
-annapurna_data_path = os.path.join(data_path, "annapurna")
+nagarik_data_path = os.path.join(data_path, "nagarik")
 
 if not os.path.exists(data_path):
     os.mkdir(data_path)
 
-if not os.path.exists(annapurna_data_path):
-    os.mkdir(annapurna_data_path)
+if not os.path.exists(nagarik_data_path):
+    os.mkdir(nagarik_data_path)
 
-total_existsing_news = len(os.listdir(annapurna_data_path))
+total_existsing_news = len(os.listdir(nagarik_data_path))
 
 news_count = total_existsing_news + 1
 
-for category, category_details in ANNAPURNAPOST_WEBSITES.items():
-    for page in range(1, category_details[1]):
-        res = req.get(category_details[0] + ("" if page == 1 else f"?page={page}"))
+for category, category_details in NAGARIK_WEBSITES.items():
+    for page in range(101, category_details[1]):
+        res = req.get(category_details[0] + f"/load-more?offset={page*24}&is_ajax=true")
         if res.status_code == 200:
             soup = BeautifulSoup(res.content, "html5lib")
-            titles_info = soup.select("h3.card__title")[:20]
+            titles_info = soup.select("div.articles article.list-group-item")
             for title_info in titles_info:
-                news = title_info.select("a")[0]
-                title = news.text
-                res = req.get(ANNAPURNA_BASE + news.get("href"))
-                # res = req.get("https://annapurnapost.com/story/470900/")
+                news = title_info.select("div.text h1 a")[0]
+                title = (
+                    news.text.strip()
+                    .replace("\xa0", " ")
+                    .replace("\n", " ")
+                    .replace("\t", " ")
+                )
+                res = req.get(NAGARIK_BASE + news.get("href"))
+                # res = req.get("https://nagarikonline.com/news/136266")
                 soup = BeautifulSoup(res.content, "html5lib")
-                news_details = soup.select("div.news__details p")
+                news_details = soup.select("div.content.text-justify article p")
                 news_text = []
                 for paragraph in news_details:
                     news_text.append(
@@ -42,18 +47,17 @@ for category, category_details in ANNAPURNAPOST_WEBSITES.items():
                         .replace("\t", " ")
                     )
                 news_text = " ".join(news_text)
-                if news_text != "" and news_text != " ":
+                if news_text.strip() != "":
                     pd.DataFrame(
                         data={
                             "title": [title],
                             "category": [category],
                             "news": [news_text],
                         }
-                    ).to_csv(os.path.join(annapurna_data_path, f"{news_count}.csv"))
+                    ).to_csv(os.path.join(nagarik_data_path, f"{news_count}.csv"))
                     news_count += 1
                     time.sleep(3)
         elif res.status_code != 404:
             continue
         else:
-            print(res.status_code)
             break
