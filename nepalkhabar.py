@@ -8,36 +8,41 @@ import time
 
 base_path = os.path.dirname(os.path.abspath(__file__))
 data_path = os.path.join(base_path, "data")
-gorkhapatra_data_path = os.path.join(data_path, "gorkhapatra")
+nepalkhabar_data_path = os.path.join(data_path, "nepalkhabar")
 
 if not os.path.exists(data_path):
     os.mkdir(data_path)
 
-if not os.path.exists(gorkhapatra_data_path):
-    os.mkdir(gorkhapatra_data_path)
+if not os.path.exists(nepalkhabar_data_path):
+    os.mkdir(nepalkhabar_data_path)
 
-total_existsing_news = len(os.listdir(gorkhapatra_data_path))
+total_existsing_news = len(os.listdir(nepalkhabar_data_path))
 
 news_count = total_existsing_news + 1
 
-for category, category_details in GORKHAPATRA_WEBSITES.items():
-    for page in range(128, category_details[1]):
-        res = req.get(category_details[0] + ("" if page == 1 else f"?page={page}"))
+headers = {
+    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.6 Safari/605.1.15"
+}
+
+for category, category_details in NEPALKHABAR_WEBSITES.items():
+    for page in range(113, category_details[1]):
+        res = req.get(
+            category_details[0] + ("" if page == 1 else f"?page={page}"),
+            headers=headers,
+        )
         if res.status_code == 200:
             soup = BeautifulSoup(res.content, "html5lib")
             titles_info = soup.select(
-                "div.container div.row.justify-content-center div.col-lg-9.category-left-layout div.row.justify-content-center div.col-lg-12.mb-5 div.slider-box-layout1 div.item-content"
-            )
-            titles_info += soup.select(
-                "div.col-lg-12 div.blog-box-layout11.w-100.mb-5 div.item-content.d-flex.flex-column.align-items-start.justify-content-center"
+                "ul.uk-list.uk-list-large.uk-list-divider li.nk-item-list-first-page div.uk-grid.uk-grid-medium"
             )
             for title_info in titles_info:
-                news = title_info.select("h2.item-title a")[0]
-                title = news.text.strip().replace("\xa0", " ").replace("\t", " ")
-                res = req.get(news.get("href"))
-                # res = req.get("https://gorkhapatraonline.com/news/136266")
+                news = title_info.select(
+                    "div.uk-width-expand h3.uk-margin-remove a.uk-link-reset"
+                )[0]
+                title = news.text.strip().replace("\xa0", " ")
+                res = req.get(NEPALKHABAR_BASE + news.get("href"), headers=headers)
                 soup = BeautifulSoup(res.content, "html5lib")
-                news_details = soup.select("div.single-blog-content div.blog-details p")
+                news_details = soup.select("div#body-content span p")
                 news_text = []
                 for paragraph in news_details:
                     news_text.append(
@@ -51,10 +56,11 @@ for category, category_details in GORKHAPATRA_WEBSITES.items():
                             "category": [category],
                             "news": [news_text],
                         }
-                    ).to_csv(os.path.join(gorkhapatra_data_path, f"{news_count}.csv"))
+                    ).to_csv(os.path.join(nepalkhabar_data_path, f"{news_count}.csv"))
                     news_count += 1
                     time.sleep(4)
         elif res.status_code != 404:
+            print(res)
             continue
         else:
             break

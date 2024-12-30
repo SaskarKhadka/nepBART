@@ -21,19 +21,14 @@ total_existsing_news = len(os.listdir(nagarik_data_path))
 news_count = total_existsing_news + 1
 
 for category, category_details in NAGARIK_WEBSITES.items():
-    for page in range(101, category_details[1]):
+    for page in range(134, category_details[1]):
         res = req.get(category_details[0] + f"/load-more?offset={page*24}&is_ajax=true")
         if res.status_code == 200:
             soup = BeautifulSoup(res.content, "html5lib")
             titles_info = soup.select("div.articles article.list-group-item")
             for title_info in titles_info:
                 news = title_info.select("div.text h1 a")[0]
-                title = (
-                    news.text.strip()
-                    .replace("\xa0", " ")
-                    .replace("\n", " ")
-                    .replace("\t", " ")
-                )
+                title = news.text.strip().replace("\xa0", " ").replace("\t", " ")
                 res = req.get(NAGARIK_BASE + news.get("href"))
                 # res = req.get("https://nagarikonline.com/news/136266")
                 soup = BeautifulSoup(res.content, "html5lib")
@@ -41,12 +36,9 @@ for category, category_details in NAGARIK_WEBSITES.items():
                 news_text = []
                 for paragraph in news_details:
                     news_text.append(
-                        paragraph.text.strip()
-                        .replace("\xa0", " ")
-                        .replace("\n", " ")
-                        .replace("\t", " ")
+                        paragraph.text.strip().replace("\xa0", " ").replace("\t", " ")
                     )
-                news_text = " ".join(news_text)
+                news_text = "\n".join(news_text)
                 if news_text.strip() != "":
                     pd.DataFrame(
                         data={
