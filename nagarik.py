@@ -3,6 +3,7 @@ import requests as req
 
 from newspaper_info import *
 import os
+import json
 import pandas as pd
 import time
 
@@ -21,9 +22,11 @@ total_existsing_news = len(os.listdir(nagarik_data_path))
 news_count = total_existsing_news + 1
 
 for category, category_details in NAGARIK_WEBSITES.items():
-    for page in range(134, category_details[1]):
+    for page in range(1, category_details[1]):
         res = req.get(category_details[0] + f"/load-more?offset={page*24}&is_ajax=true")
         if res.status_code == 200:
+            with open("nagarik_page.json", "w") as file:
+                json.dump({"page": page, "category": category}, file)
             soup = BeautifulSoup(res.content, "html5lib")
             titles_info = soup.select("div.articles article.list-group-item")
             for title_info in titles_info:

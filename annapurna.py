@@ -4,6 +4,7 @@ import requests as req
 from newspaper_info import *
 import os
 import pandas as pd
+import json
 import time
 
 base_path = os.path.dirname(os.path.abspath(__file__))
@@ -21,8 +22,10 @@ total_existsing_news = len(os.listdir(annapurna_data_path))
 news_count = total_existsing_news + 1
 
 for category, category_details in ANNAPURNAPOST_WEBSITES.items():
-    for page in range(176, category_details[1]):
+    for page in range(3648, category_details[1]):
         res = req.get(category_details[0] + ("" if page == 1 else f"?page={page}"))
+        with open("annapurna_page.json", "w") as file:
+            json.dump({"page": page, "category": category}, file)
         if res.status_code == 200:
             soup = BeautifulSoup(res.content, "html5lib")
             titles_info = soup.select("h3.card__title")[:20]

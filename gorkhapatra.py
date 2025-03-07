@@ -5,6 +5,7 @@ from newspaper_info import *
 import os
 import pandas as pd
 import time
+import json
 
 base_path = os.path.dirname(os.path.abspath(__file__))
 data_path = os.path.join(base_path, "data")
@@ -21,8 +22,10 @@ total_existsing_news = len(os.listdir(gorkhapatra_data_path))
 news_count = total_existsing_news + 1
 
 for category, category_details in GORKHAPATRA_WEBSITES.items():
-    for page in range(128, category_details[1]):
+    for page in range(1, category_details[1]):
         res = req.get(category_details[0] + ("" if page == 1 else f"?page={page}"))
+        with open("gorkhapatra_page.json", "w") as file:
+            json.dump({"page": page, "category": category}, file)
         if res.status_code == 200:
             soup = BeautifulSoup(res.content, "html5lib")
             titles_info = soup.select(

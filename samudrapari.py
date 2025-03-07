@@ -9,34 +9,41 @@ import time
 
 base_path = os.path.dirname(os.path.abspath(__file__))
 data_path = os.path.join(base_path, "data")
-dcnepal_data_path = os.path.join(data_path, "dcnepal")
+samudrapari_data_path = os.path.join(data_path, "samudrapari")
 
 if not os.path.exists(data_path):
     os.mkdir(data_path)
 
-if not os.path.exists(dcnepal_data_path):
-    os.mkdir(dcnepal_data_path)
+if not os.path.exists(samudrapari_data_path):
+    os.mkdir(samudrapari_data_path)
 
-total_existsing_news = len(os.listdir(dcnepal_data_path))
+total_existsing_news = len(os.listdir(samudrapari_data_path))
 
 news_count = total_existsing_news + 1
 
-for category, category_details in DCNEPAL_WEBSITES.items():
-    for page in range(517, category_details[1]):
-        res = req.get(category_details[0] + ("" if page == 1 else f"page/{page}/"))
-        with open("dcnepal_page.json", "w") as file:
+headers = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+}
+
+for category, category_details in SAMPUDAPARI_WEBSITES.items():
+    for page in range(3643, category_details[1]):
+        res = req.get(
+            category_details[0] + ("" if page == 1 else f"/page/{page}"),
+            headers=headers,
+        )
+        with open("samudrapari_page.json", "w") as file:
             json.dump({"page": page, "category": category}, file)
         if res.status_code == 200:
-            soup = BeautifulSoup(res.content, "html5lib")
+            soup = BeautifulSoup(res.content, "html5lib", from_encoding="utf-8")
             titles_info = soup.select(
-                "div.category__container div.grid div.column-3 div.row--news"
+                "div#primary div.archive-content-wrap article h2.entry-title"
             )
             for title_info in titles_info:
-                news = title_info.select("h3.news__title--small a.title")[0]
+                news = title_info.select("a")[0]
                 title = news.text.strip().replace("\xa0", " ").replace("\t", " ")
-                res = req.get(news.get("href"))
-                soup = BeautifulSoup(res.content, "html5lib")
-                news_details = soup.select("div.news-content-area p")
+                res = req.get(news.get("href"), headers=headers)
+                soup = BeautifulSoup(res.content, "html5lib", from_encoding="utf-8")
+                news_details = soup.select("div#primary div.entry-content p")
                 news_text = []
                 for paragraph in news_details:
                     news_text.append(
@@ -50,7 +57,7 @@ for category, category_details in DCNEPAL_WEBSITES.items():
                             "category": [category],
                             "news": [news_text],
                         }
-                    ).to_csv(os.path.join(dcnepal_data_path, f"{news_count}.csv"))
+                    ).to_csv(os.path.join(samudrapari_data_path, f"{news_count}.csv"))
                     news_count += 1
                     time.sleep(4)
         elif res.status_code != 404:

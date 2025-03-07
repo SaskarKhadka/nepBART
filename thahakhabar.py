@@ -3,51 +3,49 @@ import requests as req
 
 from newspaper_info import *
 import os
+import json
 import pandas as pd
 import time
-import json
 
 base_path = os.path.dirname(os.path.abspath(__file__))
 data_path = os.path.join(base_path, "data")
-nepalkhabar_data_path = os.path.join(data_path, "nepalkhabar")
+thahakhabar_data_path = os.path.join(data_path, "thahakhabar")
 
 if not os.path.exists(data_path):
     os.mkdir(data_path)
 
-if not os.path.exists(nepalkhabar_data_path):
-    os.mkdir(nepalkhabar_data_path)
+if not os.path.exists(thahakhabar_data_path):
+    os.mkdir(thahakhabar_data_path)
 
-total_existsing_news = len(os.listdir(nepalkhabar_data_path))
+total_existsing_news = len(os.listdir(thahakhabar_data_path))
 
 news_count = total_existsing_news + 1
 
 headers = {
-    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.6 Safari/605.1.15"
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
 }
 
-for category, category_details in NEPALKHABAR_WEBSITES.items():
+for category, category_details in THAHAKHABAR_WEBSITES.items():
     for page in range(1, category_details[1]):
         res = req.get(
             category_details[0] + ("" if page == 1 else f"?page={page}"),
             headers=headers,
         )
-        with open("nepalkhabar_page.json", "w") as file:
+        with open("thahakhabar_page.json", "w") as file:
             json.dump({"page": page, "category": category}, file)
         if res.status_code == 200:
-            soup = BeautifulSoup(res.content, "html5lib")
+            soup = BeautifulSoup(res.content, "html5lib", from_encoding="utf-8")
             titles_info = soup.select(
-                # "ul.uk-list.uk-list-large.uk-list-divider li.nk-item-list-first-page div.uk-grid.uk-grid-medium"
-                "ul.uk-list.uk-list-large.uk-list-divider li div.uk-grid.uk-flex.uk-flex-top"
+                "div.category-collage div.border-radius-box.border-box.mb-30.border-category-grey div.col-lg-6.col-md-6.pl-0.pr-0 div.post-body.p-30.m-0 div.mb-15 h3"
             )
             for title_info in titles_info:
-                news = title_info.select(
-                    # "div.uk-width-expand h3.uk-margin-remove a.uk-link-reset"
-                    "h3.uk-margin-remove a.uk-link-reset"
-                )[0]
-                title = news.text.strip().replace("\xa0", " ")
-                res = req.get(NEPALKHABAR_BASE + news.get("href"), headers=headers)
-                soup = BeautifulSoup(res.content, "html5lib")
-                news_details = soup.select("div#body-content span p")
+                news = title_info.select("a")[0]
+                title = news.text.strip().replace("\xa0", " ").replace("\t", " ")
+                res = req.get(THAHAKHABAR_BASE + news.get("href"), headers=headers)
+                soup = BeautifulSoup(res.content, "html5lib", from_encoding="utf-8")
+                news_details = soup.select(
+                    "div.detail-news-details-paragh.detail-fontsize.text-justify.mb-30.post p"
+                )
                 news_text = []
                 for paragraph in news_details:
                     news_text.append(
@@ -61,12 +59,10 @@ for category, category_details in NEPALKHABAR_WEBSITES.items():
                             "category": [category],
                             "news": [news_text],
                         }
-                    ).to_csv(os.path.join(nepalkhabar_data_path, f"{news_count}.csv"))
+                    ).to_csv(os.path.join(thahakhabar_data_path, f"{news_count}.csv"))
                     news_count += 1
                     time.sleep(4)
         elif res.status_code != 404:
-            print(res)
             continue
         else:
-            print("what")
             break
