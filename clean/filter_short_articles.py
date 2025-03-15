@@ -1,5 +1,6 @@
 import codecs
 import pandas as pd
+import os
 
 
 def main():
@@ -15,16 +16,22 @@ def main():
         for file in files:
             with codecs.open(
                 f"./cleaned_data/{folder}/{file}", "r", encoding="utf-8"
-            ) as file:
-                text = file.read()
+            ) as f:
+                text = f.read()
             if len(text.split()) <= 5:
                 less_than_5.append(f"{folder}_{file}")
             elif len(text.split()) <= 10:
                 less_than_10.append(f"{folder}_{file}")
             elif len(text.split()) <= 15:
                 less_than_15.append(f"{folder}_{file}")
-            elif len(text.split()) <= 20:
+            elif len(text.split()) < 20:
                 less_than_20.append(f"{folder}_{file}")
+
+        print(f"{folder} completed")
+        print("Less than 5:", len(less_than_5))
+        print("Less than 10:", len(less_than_10))
+        print("Less than 15:", len(less_than_15))
+        print("Less than 20:", len(less_than_20))
 
     pd.Series(less_than_5, name="file_name").to_csv("less_than_5.csv", index=None)
     pd.Series(less_than_10, name="file_name").to_csv("less_than_10.csv", index=None)
