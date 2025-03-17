@@ -66,41 +66,35 @@ def perform_preprocessing(text):
     return text
 
 
-def main(folder_name: str):
-    folder_exists = True
+def main(folder_name: str, limit: int):
+    if not os.path.exists(f"./cleaned"):
+        os.mkdir("./cleaned")
 
-    if not os.path.exists(f"./cleaned_data"):
-        os.mkdir("./cleaned_data")
+    # if not os.path.exists(f"./cleaned/{folder_name}"):
+    # df_exists = False
+    # os.mkdir(f"./cleaned/{folder_name}")
 
-    if not os.path.exists(f"./cleaned_data/{folder_name}"):
-        folder_exists = False
-        os.mkdir(f"./cleaned_data/{folder_name}")
+    if not os.path.exists(f"./cleaned/completed"):
+        # df_exists = False
+        os.mkdir(f"./cleaned/completed")
 
-    if not os.path.exists(f"./cleaned_data/{folder_name}/completed.json"):
-        with open(f"./cleaned_data/{folder_name}/completed.json", "w") as file:
+    if not os.path.exists(f"./cleaned/completed/{folder_name}_completed.json"):
+        with open(f"./cleaned/completed/{folder_name}_completed.json", "w") as file:
             completed_files = {}
             json.dump(completed_files, file)
     else:
-        with open(f"./cleaned_data/{folder_name}/completed.json", "r") as file:
+        with open(f"./cleaned/completed/{folder_name}_completed.json", "r") as file:
             completed_files = json.load(file)
 
     files = os.listdir(f"../data/{folder_name}")
 
-    if folder_exists:
-        completed_files_len = len(os.listdir(f"./cleaned_data/{folder_name}/"))
-        if len(files) - completed_files_len >= 20_000:
-            print(len(files), "Before")
-            files = files[: completed_files_len + 20_000 - 1]
-            print(len(files), "After")
-    else:
-        if len(files) >= 20_000:
-            print(len(files), "First Before")
-            files = files[:20_000]
-            print(len(files), "First After")
-
     curr_file = None
 
-    english = []
+    count = 0
+
+    # english = []
+    # df = pd.DataFrame(columns=["text"])
+    rows = []
 
     try:
         for file in files:
@@ -118,6 +112,9 @@ def main(folder_name: str):
 
             text = perform_preprocessing(df["news"][0]).strip()
 
+            if len(text.split()) < 10:
+                continue
+
             text = text.split("।")
 
             if len(text) <= 1:
@@ -132,38 +129,56 @@ def main(folder_name: str):
             text = "।".join(text).strip() + "।"
 
             if re.search("[a-zA-Z]", text):
-                english.append(file)
                 continue
 
-            with codecs.open(
-                f'./cleaned_data/{folder_name}/{file.split(".")[0]}.txt',
-                "w",
-                encoding="utf-8",
-            ) as file:
-                file.write(text)
+            rows.append(text.strip())
+
+            count += 1
+
+            # if count >= 30_000:
+            if count >= limit:
+                break
+
+            # with codecs.open(
+            #     f'./cleaned_data/{folder_name}/{file.split(".")[0]}.txt',
+            #     "w",
+            #     encoding="utf-8",
+            # ) as file:
+            #     file.write(text.strip())
 
     except Exception as e:
         print(traceback.format_exc())
         if completed_files.get(curr_file):
             del completed_files[curr_file]
     finally:
-        with open(f"./cleaned_data/{folder_name}/completed.json", "w") as file:
+        with open(f"./cleaned/completed/{folder_name}_completed.json", "w") as file:
             json.dump(completed_files, file)
-        if not os.path.exists(f"./cleaned_data/{folder_name}_english.csv"):
-            pl.DataFrame({"english_files": english}).write_csv(
-                f"./cleaned_data/{folder_name}_english.csv"
-            )
+
+        new_df = pl.DataFrame(data={"text": rows}, schema={"text": pl.String})
+
+        if not os.path.exists(f"./cleaned/df_{folder_name}.csv"):
+            new_df.write_csv(f"./cleaned/df_{folder_name}.csv")
         else:
-            data = pl.read_csv(f"./cleaned_data/{folder_name}_english.csv")
-            pl.DataFrame(
-                {"english_files": data["english_files"].to_list() + english}
-            ).write_csv(f"./cleaned_data/{folder_name}_english.csv")
+            pl.read_csv(f"./cleaned/df_{folder_name}.csv").vstack(new_df).write_csv(
+                f"./cleaned/df_{folder_name}.csv"
+            )
+
+        # if not os.path.exists(f"./cleaned_data/{folder_name}_english.csv"):
+        #     pl.DataFrame({"english_files": english}).write_csv(
+        #         f"./cleaned_data/{folder_name}_english.csv"
+        #     )
+        # else:
+        #     data = pl.read_csv(f"./cleaned_data/{folder_name}_english.csv")
+        #     pl.DataFrame(
+        #         {"english_files": data["english_files"].to_list() + english}
+        #     ).write_csv(f"./cleaned_data/{folder_name}_english.csv")
 
 
 if __name__ == "__main__":
     folders = os.listdir("../data/")
     folder_name = sys.argv[1]
     if folder_name in folders:
-        main(folder_name)
+        limit = 10
+        main(folder_name, limit)
     else:
         print("Folder not found")
