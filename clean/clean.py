@@ -158,10 +158,13 @@ def main(folder_name: str, limit: int):
 
         if not os.path.exists(f"./cleaned/df_{folder_name}.csv"):
             new_df.write_csv(f"./cleaned/df_{folder_name}.csv")
+            print("Total:", len(files))
+            print("Total Completed:", new_df.height)
         else:
-            pl.read_csv(f"./cleaned/df_{folder_name}.csv").vstack(new_df).write_csv(
-                f"./cleaned/df_{folder_name}.csv"
-            )
+            prev_df = pl.read_csv(f"./cleaned/df_{folder_name}.csv")
+            print("Total:", len(files))
+            print("Total Completed:", prev_df.height + new_df.height)
+            prev_df.vstack(new_df).write_csv(f"./cleaned/df_{folder_name}.csv")
 
         # if not os.path.exists(f"./cleaned_data/{folder_name}_english.csv"):
         #     pl.DataFrame({"english_files": english}).write_csv(
@@ -178,7 +181,7 @@ if __name__ == "__main__":
     folders = os.listdir("../data/")
     folder_name = sys.argv[1]
     if folder_name in folders:
-        limit = 10
+        limit = 10_000
         main(folder_name, limit)
     else:
         print("Folder not found")
